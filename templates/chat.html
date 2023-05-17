@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat</title>
+  <link rel="stylesheet" href="{{url_for('static', filename='assets/css/chat.css')}}">
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+</head>
+<body>
+  <div class="container" style="margin: auto;">
+    <div class="row mb-4">
+      <div class="col-12 text-center pt-3"></div>
+    </div>
+    <div class="row justify-content-md-center mb-4">
+      <div class="col-md-6">
+        <!-- Start code -->
+        <div class="card">
+          <div class="card-header">
+            <h6 id="join" style="font-weight: bold;"></h6>
+          </div>
+          <div class="card-body messages-box">
+            <ul class="list-unstyled messages-list" id="messages"></ul>
+          </div>
+          <div class="card-footer">
+            <form id="send-message" class="send-message-form">
+              <div class="input-group">
+                <input id="input-me" type="text" name="messages" class="form-control input-sm" placeholder="Type your message here..." />
+                <span class="input-group-append">
+                  <button class="btn btn-primary" type="submit">Send <i class="fas fa-airplane"></i></button>
+                </span>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- End code -->
+      </div>
+    </div>
+    <div class="row mb-4 mt-5">
+      <div class="col-12 text-center">
+        <p>Logout <a href="{{ url_for('logout') }}">Click here to Logout</a></p>
+      </div>
+    </div>
+  </div>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="//cdn.socket.io/socket.io-1.2.0.js"></script>
+  <script src="{{url_for('static', filename='assets/js/bootstrap.min.js') }}"></script>
+  <script src="{{url_for('static', filename='assets/js/custom_js/chat.js') }}"></script>
+  <script>
+    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port, {
+      transports: ['websocket']
+    });
+
+    socket.on('handle_data', function(data) {
+      console.log(data);
+      var name = data.fullname_var;
+      var photo = data.photo;
+      socket.emit('join', {'name': name});
+    });
+
+    socket.on('join', function(data) {
+      $('#join').html(data.message).hide().fadeIn('slow');
+      setTimeout(function() {
+        $('#join').fadeOut('slow');
+      }, 5000);
+    });
+
+    socket.on('message', function(data) {
+      var message = '';
+      var photo_var = data.photo_var;
+      var sender = data.is_sender;
+      console.log(sender);
+      
+      message += '<li class="clearfix';
+      if (sender) {
+        message += ' messages-me">';
+      } else {
+        message += ' messages-you">';
+      }
+      
+      message += '  <span class="message-img">';
+      message += '    <img style="width:50px;height:50px;" src="' + photo_var + '" alt="User Avatar" class="avatar-sm border rounded-circle">';
+      message += '  </span>';
+      message += '  <div class="message-body">';
+      message += '    <div class="message-header">';
+      if (!sender) {
+        message += '      <strong class="messages-title">' + data.sender + '</strong>';
+      }
+      message += '      <small class="time-messages text-muted">';
+      message += '        <span class="fas fa-time"></span> <span class="minutes">' + data.sender + '</span>';
+      message += '      </small>';
+      message += '    </div>';
+      message += '    <p class="messages-p">' + data.message + '</p>';
+      message += '  </div>';
+      message += '</li>';
+      
+      $('#messages').append(message);
+    });
+
+    $('#send-message').submit(function(event) {
+      event.preventDefault();
+      var message = $('#input-me').val();
+      socket.emit('message', {'message': message});
+      $('#input-me').val('');
+    });
+  </script>
+</body>
+</html>
