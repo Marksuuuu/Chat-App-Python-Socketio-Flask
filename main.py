@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, json, session
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 import requests
+from werkzeug._reloader import run_with_reloader
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
@@ -40,7 +41,7 @@ def login():
 
                 global photo
                 if photo_url == False:
-                    photo = """/assets/images/pngegg.png"""
+                    photo = """../static/assets/images/pngegg.png"""
                 else:
                     hris = "http://hris.teamglac.com/"
                     session['photo_url'] = hris + user_data['photo_url']
@@ -84,10 +85,21 @@ def handle_message(data):
     is_sender = sender_name == session['fullname']
     emit('message', {'sender': sender_name_here, 'message': data['message'], 'is_sender': is_sender, 'photo_var': photo_var}, broadcast=True)
 
+# @socketio.on('join')
+# def handle_join(data):
+#     room = data['room']
+#     join_room(room)
+    
+#     clients[request.sid] = {
+#         'name': data['name'],
+#         'room': room
+#     }
+    
+#     emit('join', {'message': f'{data["name"]} has joined the chat'}, broadcast=True)
 @socketio.on('join')
 def handle_join(data):
     clients[request.sid] = data['name']
     emit('join', {'message': f'{data["name"]} has joined the chat'}, broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, host='10.0.2.150', port='5000', debug=True)
+    socketio.run(app, host='10.0.2.150', port='9000', debug=True)

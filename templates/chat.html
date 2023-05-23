@@ -6,13 +6,37 @@
   <title>Chat</title>
   <link rel="stylesheet" href="{{url_for('static', filename='assets/css/chat.css')}}">
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <style type="text/css">
+    #allActives{
+      display: flex;
+      justify-content: center;
+    }
+    #img{
+      margin-top: auto;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <div class="container" style="margin: auto;">
-    <div class="row mb-4">
-      <div class="col-12 text-center pt-3"></div>
-    </div>
-    <div class="row justify-content-md-center mb-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <!-- Start code -->
+        <div class="card text-center">
+          <div class="card-header" style="font-weight: bold;">
+            ALL ACTIVE
+          </div>
+          <div class="card-body">
+            <h5 class="card-title"></h5>
+            <p class="card-text" id='allActives'></p>
+          </div>
+          <div class="card-footer text-muted">
+          </div>
+        </div>
+
+        <!-- End code -->
+      </div>
       <div class="col-md-6">
         <!-- Start code -->
         <div class="card">
@@ -33,15 +57,20 @@
             </form>
           </div>
         </div>
+
         <!-- End code -->
       </div>
     </div>
-    <div class="row mb-4 mt-5">
-      <div class="col-12 text-center">
-        <p>Logout <a href="{{ url_for('logout') }}">Click here to Logout</a></p>
-      </div>
+  </div>
+  <div class="row mb-4 mt-5">
+    <div class="col-12 text-center">
+      <p>Logout <a href="{{ url_for('logout') }}">Click here to Logout</a></p>
     </div>
   </div>
+
+
+
+   
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script src="//cdn.socket.io/socket.io-1.2.0.js"></script>
   <script src="{{url_for('static', filename='assets/js/bootstrap.min.js') }}"></script>
@@ -51,14 +80,24 @@
       transports: ['websocket']
     });
 
+    var activeUsers = {}; // Object to store active users
+
     socket.on('handle_data', function(data) {
       console.log(data);
       var name = data.fullname_var;
       var photo = data.photo;
-      socket.emit('join', {'name': name});
+      
+      // Check if user is already in the activeUsers object
+      if (!(name in activeUsers)) {
+        activeUsers[name] = true; // Mark user as active
+        $('#allActives').append('<img style="width:50px;height:50px;" src="' + photo + '" alt="User Avatar" class="avatar-sm border rounded-circle"><p id="img" class="text-dark">'+ name +'<p/></br>');
+      }
+      
+      socket.emit('join', {'name': name, 'photo': photo});
     });
 
     socket.on('join', function(data) {
+
       $('#join').html(data.message).hide().fadeIn('slow');
       setTimeout(function() {
         $('#join').fadeOut('slow');
@@ -68,8 +107,14 @@
     socket.on('message', function(data) {
       var message = '';
       var photo_var = data.photo_var;
+      console.log('data',data.message)
+      var fetchedMessage = data.message
+       if (fetchedMessage == '-clear' || fetchedMessage == '-Clear') {
+        $('#messages').empty();
+        return; // Stop further execution of the function
+      }
+      
       var sender = data.is_sender;
-      console.log(sender);
       
       message += '<li class="clearfix';
       if (sender) {
